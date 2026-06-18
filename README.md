@@ -64,9 +64,10 @@ defecto, no se versionan):
 
 Requisito común: **Docker Desktop** en ejecución. Hay dos formas de levantarlo.
 
-### Opción A — Clonar y compilar las imágenes (siempre funciona)
+### Opción A — Compilado local (clonar y compilar)
 
-No requiere autenticación ni imágenes publicadas; compila todo en local.
+Para ejecutar el proyecto desde el código. No requiere autenticación ni imágenes publicadas;
+compila todo en local.
 
 ```bash
 git clone https://github.com/DiiAns23/prueba-chn.git
@@ -80,10 +81,11 @@ Compila backend (Maven) y frontend (Angular) y levanta los tres servicios:
 
 Para detener: `docker compose down` (agrega `-v` para borrar también los datos de la BD).
 
-### Opción B — Ejecutar las imágenes ya publicadas (GHCR, sin compilar)
+### Opción B — Solo para probar (imágenes ya publicadas en GHCR, sin compilar)
 
-El CI publica `ghcr.io/diians23/chn-backend` y `ghcr.io/diians23/chn-frontend`. Necesitas solo el
-repo (por los `docker-compose` y el `.env`), no el código:
+La forma más rápida de levantarlo sin compilar. El CI publica `ghcr.io/diians23/chn-backend` y
+`ghcr.io/diians23/chn-frontend`. Necesitas solo el repo (por los `docker-compose` y el `.env`),
+no el código:
 
 ```bash
 git clone https://github.com/DiiAns23/prueba-chn.git
