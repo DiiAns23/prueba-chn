@@ -1,0 +1,47 @@
+# Levanta TODO desde las imágenes ya publicadas en GHCR por el CI (sin compilar en local).
+#
+# Uso:
+#   1) docker login ghcr.io           (con tu usuario y un token con read:packages)
+#   2) $env:GHCR_OWNER = "tu-usuario-github"   (en minúsculas)
+#   3) docker compose -f docker-compose.registry.yml up -d
+#
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: chn-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASSWORD:?ver .env.example}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+  app:
+    image: ghcr.io/${GHCR_OWNER}/chn-backend:latest
+    container_name: chn-prestamos
+    depends_on:
+      - sqlserver
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=chn_prestamos;encrypt=true;trustServerCertificate=true"
+      DB_USERNAME: sa
+      DB_PASSWORD: "${DB_PASSWORD:?ver .env.example}"
+      JWT_SECRET: "${JWT_SECRET:?ver .env.example}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ver .env.example}"
+      OPERADOR_PASSWORD: "${OPERADOR_PASSWORD:?ver .env.example}"
+      CLIENTE_PASSWORD: "${CLIENTE_PASSWORD:-}"   # opcional: siembra cliente demo si se define
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER}/chn-frontend:latest
+    container_name: chn-frontend
+    depends_on:
+      - app
+    ports:
+      - "4200:80"
+
+volumes:
+  mssql-data:

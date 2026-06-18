@@ -1,0 +1,39 @@
+# ---- Maven / build ----
+target/
+*.jar
+*.war
+hs_err_pid*
+replay_pid*
+
+# ---- Java ----
+*.class
+
+# ---- IDE: IntelliJ ----
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ---- IDE: Eclipse ----
+.classpath
+.project
+.settings/
+bin/
+
+# ---- IDE: VS Code ----
+.vscode/
+
+# ---- Herramientas locales / agentes (no forman parte de la solución) ----
+.claude/
+CHATS.md
+
+# ---- Entorno / secretos ----
+.env
+*.env
+
+# ---- Logs ----
+*.log
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
