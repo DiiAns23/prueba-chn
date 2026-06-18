@@ -16,10 +16,12 @@ JWT por matriz de permisos. Diseño documentado en [`docs/`](./docs).
 
 ```
 chn/
-├── backend/            # API Spring Boot (pom.xml, src/, Dockerfile)
-├── frontend/           # SPA Angular 18 + Tailwind (ver docs/FRONTEND.md)
-├── docs/               # MER, casos de uso/prueba, arquitectura, diagramas .drawio
-└── docker-compose.yml  # SQL Server + backend
+├── backend/                     # API Spring Boot (pom.xml, src/, Dockerfile)
+├── frontend/                    # SPA Angular 18 + Tailwind (Dockerfile + nginx)
+├── docs/                        # Casos de uso, procesos y MER (PDF) + README de diseño
+├── .github/workflows/           # CI: build y publicación de imágenes en GHCR
+├── docker-compose.yml           # Stack local: SQL Server + API + frontend (compila imágenes)
+└── docker-compose.registry.yml  # Stack desde imágenes ya publicadas en GHCR
 ```
 
 ## Ejecutar
@@ -57,6 +59,58 @@ defecto, no se versionan):
 
 > Opcionales (`DB_URL`, `DB_USERNAME`, `JWT_EXP_MINUTES`, `ADMIN_USERNAME`, `OPERADOR_USERNAME`)
 > tienen valor por defecto en `application.yml`.
+
+## Despliegue Local
+
+Requisito común: **Docker Desktop** en ejecución. Hay dos formas de levantarlo.
+
+### Opción A — Clonar y compilar las imágenes (siempre funciona)
+
+No requiere autenticación ni imágenes publicadas; compila todo en local.
+
+```bash
+git clone https://github.com/DiiAns23/prueba-chn.git
+cd prueba-chn
+cp .env.example .env            # Windows PowerShell: Copy-Item .env.example .env
+docker compose up --build -d
+```
+
+Compila backend (Maven) y frontend (Angular) y levanta los tres servicios:
+- Frontend: `http://localhost:4200` · API: `http://localhost:8080` · Swagger: `/swagger-ui.html`
+
+Para detener: `docker compose down` (agrega `-v` para borrar también los datos de la BD).
+
+### Opción B — Ejecutar las imágenes ya publicadas (GHCR, sin compilar)
+
+El CI publica `ghcr.io/diians23/chn-backend` y `ghcr.io/diians23/chn-frontend`. Necesitas solo el
+repo (por los `docker-compose` y el `.env`), no el código:
+
+```bash
+git clone https://github.com/DiiAns23/prueba-chn.git
+cd prueba-chn
+cp .env.example .env
+export GHCR_OWNER=diians23                 # Windows PowerShell: $env:GHCR_OWNER = "diians23"
+docker compose -f docker-compose.registry.yml up -d
+```
+
+> **¿Hace falta login?** Las imágenes de GHCR son **privadas** por defecto: para bajarlas habría que
+> `docker login ghcr.io` con un token (`read:packages`). Para que cualquiera las descargue **sin
+> autenticarse**, márcalas como **públicas** en GitHub (Packages → cada paquete → *Package settings*
+> → *Change visibility* → *Public*). Si prefieres no exponerlas, usa la **Opción A** (clonar y
+> compilar), que no necesita acceso al registry.
+
+### Levantar servicio por servicio
+
+`docker compose` resuelve las dependencias (`depends_on`) automáticamente:
+
+```bash
+docker compose up -d sqlserver    # solo la base de datos
+docker compose up -d app          # solo la API (arranca también su BD; sin frontend)
+docker compose up -d frontend     # frontend + API + BD (toda la cadena)
+```
+
+Para levantar **solo la API** usa `docker compose up -d app`. Añade `--build` si compilas en local
+(Opción A), o `-f docker-compose.registry.yml` para usar las imágenes publicadas.
 
 ## Usuarios por defecto
 
@@ -108,16 +162,10 @@ El **script de BD** entregable son las migraciones T-SQL en
 ## CI/CD e imágenes (GitHub Actions + GHCR)
 
 El workflow [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) **construye y publica** las
-imágenes de `backend` y `frontend` en GitHub Container Registry (GHCR) en cada push a `main`
-(en *pull request* solo construye, no publica). **No despliega a producción**: deja las imágenes
-listas para descargar y ejecutar sin compilar en local.
-
-Correr desde las imágenes ya publicadas (sin build):
-```bash
-docker login ghcr.io                 # usuario + token con read:packages
-$env:GHCR_OWNER = "tu-usuario"       # en minúsculas (PowerShell)
-docker compose -f docker-compose.registry.yml up -d
-```
+imágenes de `backend` y `frontend` en GitHub Container Registry (GHCR) **solo cuando el código llega
+a `main`** (push/merge de un PR) o al lanzarlo manualmente (*workflow_dispatch*). No se ejecuta al
+subir ramas ni al abrir *pull requests*. **No despliega a producción**: deja las imágenes listas
+para ejecutarse sin compilar (ver [Despliegue Local](#despliegue-local), Opción B).
 
 ## Pruebas
 
