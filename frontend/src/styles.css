@@ -1,0 +1,6 @@
+/* Estilos globales: Tailwind + un fondo suave para toda la app. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { @apply bg-slate-50 text-slate-800; height: 100%; margin: 0; }
